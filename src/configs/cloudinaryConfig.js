@@ -22,7 +22,7 @@ const cloudinaryStorage = new CloudinaryStorage({
   cloudinary, // ✅ Make sure this is correctly initialized
   params: {
     folder: 'ricky-product-images',
-    allowed_formats: ['jpg', 'png', 'jpeg'], // ✅ Define allowed formats
+    allowed_formats: ['jpg', 'png', 'jpeg', 'avif', 'webp'], // ✅ Define allowed formats
   },
 });
 
