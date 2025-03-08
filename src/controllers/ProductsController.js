@@ -38,37 +38,63 @@ export const createProductController = async (req, res) => {
 
 export const updateProductController = async (req, res) => {
   try {
+    console.log('Request body:', req.body);
+
     let detailImgs;
     const { id } = req.params;
     if (req.files || req.body.images) {
       detailImgs = req.files
         ? req.files.map((file) => file.path)
         : req.body.images;
-      console.log(req.files);
+      console.log('Uploaded files:', req.files);
     }
 
-    // console.log(typeof req.body.productDetails);
-    // console.log(JSON.parse(req.body.productDetails));
-
-    let { name, description, productDetails, category } = req.body;
+    let {
+      name,
+      description,
+      productDetails,
+      category,
+      imagesToRemove,
+      newImageUrls,
+      imageUrl, // Handle legacy field if sent
+    } = req.body;
 
     if (typeof productDetails === 'string') {
       try {
         productDetails = JSON.parse(productDetails);
       } catch (error) {
-        console.log(error);
-
+        console.error('Error parsing productDetails:', error);
         return res.status(400).json({ error: 'Invalid productDetails format' });
       }
     }
+
+    let parsedImagesToRemove = [];
+    if (imagesToRemove) {
+      try {
+        parsedImagesToRemove =
+          typeof imagesToRemove === 'string'
+            ? JSON.parse(imagesToRemove)
+            : imagesToRemove;
+      } catch (error) {
+        console.error('Error parsing imagesToRemove:', error);
+        parsedImagesToRemove = [];
+      }
+    } else if (imageUrl) {
+      // Fallback for legacy immediate removal
+      parsedImagesToRemove = [imageUrl];
+    }
+
     const data = {
       name,
       description,
       productDetails,
       category,
-      productImgs: detailImgs,
+      productImgs: detailImgs || [],
+      imagesToRemove: parsedImagesToRemove,
+      newImageUrls,
     };
-    console.log('data sending to service', data);
+
+    console.log('Data sending to service:', data);
 
     const result = await updateProductService(id, data);
     return res.status(200).json(result);

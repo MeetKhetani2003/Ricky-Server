@@ -29,11 +29,40 @@ export const updateProductService = async (id, data) => {
     const existingImgs = Array.isArray(product.productImgs)
       ? product.productImgs
       : [];
-    const newImgs = Array.isArray(data.productImgs) ? data.productImgs : [];
+    const newImgs = data.newImageUrls
+      ? data.newImageUrls.split(',').map((url) => url.trim())
+      : Array.isArray(data.productImgs)
+      ? data.productImgs
+      : [];
 
-    data.productImgs = [...existingImgs, ...newImgs];
+    // Handle images to remove
+    const imagesToRemove = Array.isArray(data.imagesToRemove)
+      ? data.imagesToRemove
+      : [];
+
+    if (imagesToRemove.length > 0) {
+      console.log('Removing images from Cloudinary:', imagesToRemove);
+      await removeImgsArrayFromCloudinary(imagesToRemove);
+    }
+
+    // Filter out removed images and merge new ones
+    const updatedImgs = existingImgs.filter(
+      (img) => !imagesToRemove.includes(img)
+    );
+    data.productImgs = [
+      ...updatedImgs,
+      ...newImgs.filter((img) => !updatedImgs.includes(img)),
+    ];
+
+    console.log('Updated productImgs:', data.productImgs);
+
+    // Clean up temporary fields
+    delete data.imagesToRemove;
+    delete data.newImageUrls;
+    delete data.imageUrl;
 
     const result = await ProductRepository.update(id, data);
+    console.log('Updated product from repository:', result);
     return result;
   } catch (error) {
     console.error('Error updating document:', error);
